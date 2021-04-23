@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# for c in 0 1 2 3 4 5; do sudo cpufreq-set -c $c -g performance; done
+# pidof t8
+# sudo perf stat -d -p 7717
+
+SCRIPT=faust2alsa
+
+echo "building test applications"
+
+
+for e in 0 1; do
+    for c in "clang++"; do
+        for f in $@; do
+
+            # generate the vector versions
+            for v in 4 32 64 128; do
+                if [ -f "${f%.dsp}_vs${v}_es${e}_${c}" ]; then
+                    echo "File already exists: ${f%.dsp}_vs${v}_es${e}_${c}"
+                else
+                    echo "Generating: ${f%.dsp}_vs${v}_es${e}_${c}"
+                    CXX=$c $SCRIPT -t 0 -lang ocpp -vec -vs $v -es $e $f;
+                    mv ${f%.dsp} ${f%.dsp}_vs${v}_es${e}_${c}
+                fi
+            done
+
+            # generate the scalar version
+            if [ -f "${f%.dsp}_scal_es${e}_${c}" ]; then
+                echo "File already exists: ${f%.dsp}_scal_es${e}_${c}"
+            else
+                CXX=$c $SCRIPT -t 0 -lang ocpp -scal -es $e $f;
+                mv ${f%.dsp} ${f%.dsp}_scal_es${e}_${c}
+            fi
+
+        done
+    done
+done

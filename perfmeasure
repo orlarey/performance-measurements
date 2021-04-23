@@ -1,0 +1,21 @@
+#!/bin/bash
+today=$(date +"%Y-%m-%d.%H.%M.%S")
+LOG="./faustperflog-$today"
+echo "" > $LOG
+# running performances of a faust program
+performance () {
+    B=`basename "$1" | head -c4`
+    echo $1 $B  
+    sudo "./$1" &
+    sleep 5
+    ID=`ps -e  | grep $B | awk '{print $1}'`
+    echo "$B ID:$ID"
+    sudo perf stat -d -p $ID &>> "$LOG" &
+    sleep 10
+    sudo kill $ID
+    sleep 5
+}
+
+for f in $@; do
+    performance "$f" &>> "$LOG"
+done
